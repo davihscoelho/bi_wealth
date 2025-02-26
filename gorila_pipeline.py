@@ -53,7 +53,7 @@ def generate_table(conn, data, table_name):
     # Create table if not exists and insert the data
     conn.execute(f"""
         CREATE OR REPLACE TABLE dwm_wealth.bronze.{table_name} AS 
-        SELECT * FROM temp_data
+        SELECT * FROM data_with_timestamp
     """)
     print(f"Tabela {table_name} criada com sucesso em dwm_wealth.bronze.{table_name}!")
 
@@ -74,8 +74,8 @@ if __name__ == "__main__":
     "referenceDate": dia,
     }
     params_ret_api = {
-        "startDate": "2025-02-01",
-        "endDate": "2025-02-25",
+        "startDate": "2024-01-01",
+        "endDate": "2025-01-28",
         "frequency": "MONTHLY",
         "seriesType": "PER_PERIOD"
     }
@@ -87,8 +87,11 @@ if __name__ == "__main__":
     conn = duckdb.connect("md:dwm_wealth")
     
     df_aum = pd.json_normalize(data_aum)
+    df_aum["primary_key"] = df_aum["portfolio_id"] + df_aum["referenceDate"]
     df_posicao = pd.json_normalize(data_position)
+    df_posicao["primary_key"] = df_posicao["portfolio_id"] + df_posicao["referenceDate"]
     df_rets = pd.json_normalize(data_retorno_financeiro)
+    df_rets["primary_key"] = df_rets["portfolio_id"] + df_rets["referenceDate"]
     
     create_schemas(conn)
     generate_table(conn, df_aum, "api_gorila_aum")
