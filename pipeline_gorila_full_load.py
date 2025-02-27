@@ -60,8 +60,6 @@ def get_transformation(data):
     return df
 
 if __name__ == "__main__":
-
-    if __name__ == "__main__":
                 
         ######################## utils #######################################
         periodo = datetime.date(datetime.now()) - BDay(3)

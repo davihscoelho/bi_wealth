@@ -37,7 +37,7 @@ def generate_table(conn, data, table_name):
 
 def get_transformation(data):
     df = pd.json_normalize(data)
-    df["primary_key"] = df["portfolio_id"] + df["referenceDate"]
+    df["primary_key"] = df["portfolio_id"].astype(str) + df["referenceDate"].astype(str)
     return df
 
 if __name__ == "__main__":
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         ######################## utils #######################################
         periodo = datetime.date(datetime.now()) - BDay(3)
         periodo = datetime.strftime(periodo, format="%Y-%m-%d")
-        portfolios_ids = get_portfolios()
+        portfolios_ids = get_portfolios()[:2]
         
         ######################## PARAMS #######################################
         params_aum_api = {

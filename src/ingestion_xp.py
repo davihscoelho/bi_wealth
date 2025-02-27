@@ -35,9 +35,9 @@ def autenticar():
         return authorization
     else:
         print("❌ Request mal-sucedido!")
-def get_portfolios():
+def get_portfolios(authorization):
 
-    authorization = autenticar()
+    #authorization = autenticar()
     header = {
         "Authorization": authorization,
         "Ocp-Apim-Subscription-Key": 'ada131f3cf3a41a2a0d8ce0048b43ad9'
@@ -62,47 +62,65 @@ def get_evolucao_aum(base_url, authorization, portfolio_id, params=None):
     if response.status_code == 200:
         print("✅ Request bem-sucedido!")
         resposta = response.json()
-        # Proceed with processing the data if it contains values
-        for i in resposta["timeseries"]:
+        for i in resposta["profit"]:
+            i["requested_at"] = datetime.now().isoformat()
             i["portfolio_id"] = portfolio_id
-        return resposta
+        return resposta["profit"]
     else:
         print(f"❌ Nenhum dado encontrado para {portfolio_id} no periodo {params}!")
         return 
 
+def get_data_aum(portfolios_ids, dates, authorization):
 
-######################### TESTING #######################
+    base_url = "https://openapi.xpi.com.br/ws-external-reports/api"
+    #authorization = autenticar()    
+    # from utils import generate_date_dict
+    # dates = generate_date_dict(2024, 1, 2025, 1)
+    lista_check = []
+    for portfolio_id in portfolios_ids:        
+        for key, value in dates.items():
+            print(f"Extracting data of {portfolio_id["customerCode"]} from {key} at {datetime.now()} with range {value}")
+            response = get_evolucao_aum(base_url, authorization, portfolio_id["customerCode"], params=value)
+            if response:
+                lista_check.extend(response)
+            else:
+                pass
+            #print(key, value)
+        pass
+    return lista_check# pd.DataFrame(lista_check)
 
-authorization = autenticar()    
-portfolios_ids = get_portfolios()
-portfolios_ids
-portfolio_id = portfolios_ids[-6]["customerCode"]
-#portfolio_id = "3134083"
-base_url = "https://openapi.xpi.com.br/ws-external-reports/api"
-params = {
-    "startDate": "2025-01-01",
-    "endDate": "2025-01-28"
-}
-response = get_evolucao_aum(base_url, authorization, portfolio_id, params=params)
+# ######################### TESTING #######################
 
-from utils import generate_date_dict
-dates = generate_date_dict(2024, 1, 2025, 1)
-dates
-
+# authorization = autenticar()    
+# portfolios_ids = get_portfolios()
+# portfolios_ids_teste = portfolios_ids[:5]
+# portfolio_id = portfolios_ids[-6]["customerCode"]
+# portfolio_id = "3134083"
+# base_url = "https://openapi.xpi.com.br/ws-external-reports/api"
+# params = {
+#     "startDate": "2025-01-01",
+#     "endDate": "2025-01-28"
+# }
+# response = get_evolucao_aum(base_url, authorization, portfolio_id, params=params)
+# response
 
 
+# from utils import generate_date_dict
+# dates = generate_date_dict(2024, 1, 2025, 1)
+# dates.keys()
+# lista_check = []
+# for portfolio_id in portfolios_ids_teste:        
+#     for key, value in dates.items():
+#         print(f"Extracting data of {portfolio_id["customerCode"]} from {key} at {datetime.now()} with range {value}")
+#         response = get_evolucao_aum(base_url, authorization, portfolio_id["customerCode"], params=value)
+#         if response:
+#             lista_check.extend(response)
+#         else:
+#             pass
+#         #print(key, value)
+# pd.DataFrame(lista_check)
 
 
-response
-#response.keys()
-response.json()
-data = response["profit"]
-data
 
-data = pd.DataFrame(data)
-data
-
-
-#portfolio_id
-#response = autenticar()
-#response
+# portfolios_ids_teste
+# get_data_aum(portfolios_ids_teste, dates)
