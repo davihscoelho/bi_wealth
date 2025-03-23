@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import time
 import sys
 import os
-from src.ingestion_xp import get_data_aum, get_portfolios, autenticar
+from src.ingestion_xp import get_data_aum, get_portfolios, autenticar, get_data_posicao
 from src.utils import generate_date_dict
 
 load_dotenv()
@@ -45,34 +45,51 @@ def generate_table(conn, data, table_name):
     print(f"Tabela {table_name} criada com sucesso em dwm_wealth.bronze.{table_name}!")
 
     #conn.close()    
-def get_transformation(data):
-    df = pd.json_normalize(data)
-    df["primary_key"] = df["portfolio_id"].astype(str) + df["date"].astype(str)
+def get_transformation(data, cols_to_pk = [], method="json"):
+
+    if method == "json":
+        df = pd.json_normalize(data)
+    elif method == "list":
+        df = pd.concat(data)
+    #primary_key = 
+    df["primary_key"] = df[cols_to_pk].astype(str).agg('-'.join, axis=1)
     return df
 
 if __name__ == "__main__":
                 
         ######################## utils #######################################
+        dates = generate_date_dict(2024, 1, 2025, 1)
+
                 
         ######################## PARAMS #######################################
         authorization = autenticar()
-        dates = generate_date_dict(2024, 1, 2025, 1)
         portfolios_ids = get_portfolios(authorization)
-        portfolios_ids_teste = portfolios_ids
+        #portfolios_ids_teste = portfolios_ids
+        params = {
+            "startReferenceDate": "2025-01-28",
+            "endReferenceDate": "2025-01-28",
+            "productTypes":["Fund","PensionFunds","FixedIncome","Repo",
+                            "TradedFunds","Stock","Cash", "Treasury", "Coe"]
+        }
 
         ######################## GET DATA #######################################
-        data_aum = get_data_aum(portfolios_ids_teste, dates, authorization)
-
-
+        data_aum = get_data_aum(portfolios_ids, dates, authorization)
+        data_posicao = get_data_posicao(portfolios_ids, params, authorization)
+        
         ######################## TRANSFORMATION ##################################
-        df_aum = get_transformation(data_aum)
+        cols_to_pk_aum = ["clientId", "effectiveDate"]
+        cols_to_pk_posicao = ["clientId", "effectiveDate", "assetId"]
+        #df_aum = get_transformation(data_aum, cols_to_pk_aum, method="json")
+        df_posicao = get_transformation(data_posicao, cols_to_pk_posicao, method="list")
+        
         
         
 
         # ######################## LOAD ############################################
         conn = duckdb.connect("md:dwm_wealth")
         
-        generate_table(conn, df_aum, "ap_xp_aum")
+        #generate_table(conn, df_aum, "ap_xp_aum")
+        generate_table(conn, df_posicao, "api_xp_posicao")
         
         conn.close()  
     

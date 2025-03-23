@@ -1,3 +1,4 @@
 tests/*.ipynb
 .env
 .dlt
+config

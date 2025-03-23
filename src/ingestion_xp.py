@@ -70,17 +70,34 @@ def get_evolucao_aum(base_url, authorization, portfolio_id, params=None):
         print(f"❌ Nenhum dado encontrado para {portfolio_id} no periodo {params}!")
         return 
 
-def get_data_aum(portfolios_ids, dates, authorization):
+def get_posicao_ativos(base_url, authorization, portfolio_id, params=None):
+    headers = {"Authorization": authorization}
+    response = requests.get(
+            url = f"{base_url}/v2/positions/customers/{portfolio_id}",
+            params=params,
+            headers=headers
+        )
+    print(response)
+    if response.status_code == 200:
+        print("✅ Request bem-sucedido!")
+        resposta = response.json()
+        return resposta
 
+    else:
+        print(f"❌ Nenhum dado encontrado para {portfolio_id} no periodo {params}!")
+        return 
+
+def get_data_aum(portfolios_ids, dates, authorization):
     base_url = "https://openapi.xpi.com.br/ws-external-reports/api"
     #authorization = autenticar()    
     # from utils import generate_date_dict
     # dates = generate_date_dict(2024, 1, 2025, 1)
     lista_check = []
-    for portfolio_id in portfolios_ids:        
+    for portfolio_id in portfolios_ids:       
+        portfolio_id = portfolio_id["customerCode"] 
         for key, value in dates.items():
-            print(f"Extracting data of {portfolio_id["customerCode"]} from {key} at {datetime.now()} with range {value}")
-            response = get_evolucao_aum(base_url, authorization, portfolio_id["customerCode"], params=value)
+            print(f"Extracting data of {portfolio_id} from {key} at {datetime.now()} with range {value}")
+            response = get_evolucao_aum(base_url, authorization, portfolio_id, params=value)
             if response:
                 lista_check.extend(response)
             else:
@@ -89,38 +106,59 @@ def get_data_aum(portfolios_ids, dates, authorization):
         pass
     return lista_check# pd.DataFrame(lista_check)
 
-# ######################### TESTING #######################
+def get_data_posicao(portfolios_ids, params, authorization):
 
-# authorization = autenticar()    
-# portfolios_ids = get_portfolios()
-# portfolios_ids_teste = portfolios_ids[:5]
-# portfolio_id = portfolios_ids[-6]["customerCode"]
-# portfolio_id = "3134083"
-# base_url = "https://openapi.xpi.com.br/ws-external-reports/api"
+    base_url ="https://openapi.xpi.com.br/ws-assets-query/external/api"            
+    lista_check = []
+    
+    for portfolio_id in portfolios_ids:
+        portfolio_id = portfolio_id["customerCode"]
+        print(f"Extracting data of {portfolio_id} at {datetime.now()}")
+        response = get_posicao_ativos(base_url, authorization, portfolio_id, params)
+        if response:
+            dfs = []
+            keys = list(response.keys())
+            for key in response.keys():
+                df = pd.json_normalize(response[key])
+                if df.shape[0] > 0:    
+                    print(f"Extracting data from {key} with shape {df.shape}")
+                    dfs.append(df)
+            if dfs:
+                new_df = pd.concat(dfs)
+
+                cols_to_drop = ["advisorCode", "originalDate", "originalValue", "openingQuantity", "openingUnitPrice", "openingValue", "originalQuantity",
+                    "profitAndLoss", "yield", "previousYield", "accumulatedYield", "delta", "purchaseQuantity", "purchaseValue",
+                    "saleQuantity", "saleValue", "status", "creationDate", "quotaVariation", "custodyTransferInQuantity", 
+                    "custodyTransferInAmount", "adjusteQuotaQuantity",  "custodyTransferOutAmount","adjusteQuotaValue", 
+                    "purchaseIncomeTax", "purchaseIof", "saleIncomeTax", "incomeTax", "iof", "saleIof", "sellingValue",
+                    "purchasingValue", "strategy", "earningValue", "originalQuota", "custodyTransferOutQuantity", "marketPrice",
+                    "invoiceId", "purchaseDate", "blockingQuantity", "collateralQuantity", "lawBlockingQuantity", "unitInterest", "totalInterest",
+                    "unitAmortisation","remuneratedCustodyOpeningQuantity", "remuneratedCustodyOpeningValue","remuneratedCustodyClosingValue",
+                    "remuneratedCustodyClosingQuantity", "totalAmortisation", "unitPremium", "totalPremium", "grossUpYield",
+                    "originalUnitPrice", "isin", "iofRate", "incomeTaxRate", "grossUpAccumulatedYield", "grossUpCumulativeYield",
+                    "cumulativeYield"]
+                new_df = new_df.drop(columns=cols_to_drop, errors="ignore")
+                if 'assetId' in new_df.columns:
+                    new_df = new_df.dropna(axis=0, subset=['assetId'])
+                lista_check.append(new_df)
+    return lista_check
+
+#lista_check.append()
+    
+
+########################### TESTING #######################
+# authorization = autenticar()
+# portfolios_ids = get_portfolios(authorization)
+# portfolios_ids_teste = portfolios_ids[:25]
+# portfolio_id = 208524  #5422 #["4583375","5422"]
+# base_url ="https://openapi.xpi.com.br/ws-assets-query/external/api"
 # params = {
-#     "startDate": "2025-01-01",
-#     "endDate": "2025-01-28"
+#     "startReferenceDate": "2025-01-28",
+#     "endReferenceDate": "2025-01-28",
+#     "productTypes":["Fund","PensionFunds","FixedIncome","Repo","TradedFunds","Stock","Cash", "Treasury", "Coe"]
 # }
-# response = get_evolucao_aum(base_url, authorization, portfolio_id, params=params)
-# response
-
-
-# from utils import generate_date_dict
-# dates = generate_date_dict(2024, 1, 2025, 1)
-# dates.keys()
-# lista_check = []
-# for portfolio_id in portfolios_ids_teste:        
-#     for key, value in dates.items():
-#         print(f"Extracting data of {portfolio_id["customerCode"]} from {key} at {datetime.now()} with range {value}")
-#         response = get_evolucao_aum(base_url, authorization, portfolio_id["customerCode"], params=value)
-#         if response:
-#             lista_check.extend(response)
-#         else:
-#             pass
-#         #print(key, value)
-# pd.DataFrame(lista_check)
-
-
-
-# portfolios_ids_teste
-# get_data_aum(portfolios_ids_teste, dates)
+# lista = get_data_posicao(portfolios_ids_teste, params, authorization)
+# pd.concat(lista)
+# pd.json_normalize(lista)
+#portfolios_ids_teste
+#get_posicao_ativos(base_url, authorization, portfolio_id, params)

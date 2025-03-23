@@ -45,7 +45,7 @@ if __name__ == "__main__":
         ######################## utils #######################################
         periodo = datetime.date(datetime.now()) - BDay(3)
         periodo = datetime.strftime(periodo, format="%Y-%m-%d")
-        portfolios_ids = get_portfolios()[:2]
+        portfolios_ids = get_portfolios()
         
         ######################## PARAMS #######################################
         params_aum_api = {
