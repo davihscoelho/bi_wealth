@@ -8,18 +8,27 @@ from utils import create_schema, ingest_full_load_table, create_unique_index, in
 conn = duckdb.connect("md:dwm_wealth")
 ########################## GET AUM ########################################
 authorization = auth_gorila()
-portfolios_ids = get_portfolios_gorila()
+PARAMS = {
+    "limit": 1000
+}
+portfolios_ids = get_portfolios_gorila(PARAMS)
 
 SCHEMA_NAME = "bronze"
 TABLE_NAME = "position"
 PREFIX_NAME = "api_gorila"
-PRIMARY_KEYS = ["referenceDate", "portfolio_id","security.name"]
+PRIMARY_KEYS = ["referenceDate", "portfolio_id","security_name"]
+
+# Get today's date
+today = pd.Timestamp.today().normalize()
+
+# Get the business day 3 days before today
+last_business_day = (today - pd.offsets.BDay(3)).strftime("%Y-%m-%d")
 
 PARAMNS = {
-                "referenceDate": "2025-01-28"
+                "referenceDate": last_business_day
         }
 all_data = []
-for portfolio_id in portfolios_ids[:3]:
+for portfolio_id in portfolios_ids:
     URL = F"https://core.gorila.com.br/portfolios/{portfolio_id["id"]}/positions/market-values"
     data = get_data_gorila(URL, authorization, params=PARAMNS)
 
@@ -31,12 +40,13 @@ for portfolio_id in portfolios_ids[:3]:
         df["primary_key"] = portfolio_id["id"]
         df["inserted_date"] = datetime.now().isoformat()
         
-        print(f"Extracting data from AuM_API for client {portfolio_id['name']} at {datetime.now()}")
+        print(f"Extracting data from Position for client {portfolio_id['name']} at {datetime.now()}")
         all_data.append(df)
 
 
 new_df = pd.concat(all_data)
-new_df
+new_df.columns = new_df.columns.str.replace(".", "_")
+new_df.drop_duplicates(subset=PRIMARY_KEYS)
 
 create_schema(conn, SCHEMA_NAME)
 ingest_full_load_table(conn, new_df, TABLE_NAME, SCHEMA_NAME, PREFIX_NAME)

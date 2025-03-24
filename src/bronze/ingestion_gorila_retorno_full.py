@@ -8,22 +8,31 @@ from utils import create_schema, ingest_full_load_table, create_unique_index, in
 conn = duckdb.connect("md:dwm_wealth")
 ########################## GET AUM ########################################
 authorization = auth_gorila()
-portfolios_ids = get_portfolios_gorila()
+PARAMS = {
+    "limit": 1000
+}
+portfolios_ids = get_portfolios_gorila(PARAMS)
 
 SCHEMA_NAME = "bronze"
 TABLE_NAME = "retorno"
 PREFIX_NAME = "api_gorila"
 PRIMARY_KEYS = ["referenceDate", "portfolio_id"]
 
+# Get today's date
+today = pd.Timestamp.today().normalize()
+
+# Get the business day 3 days before today
+last_business_day = (today - pd.offsets.BDay(3)).strftime("%Y-%m-%d")
+
 PARAMNS =   {
-                "startDate": "2024-01-01",
-                "endDate": "2025-01-28",
+                "startDate": last_business_day,
+                "endDate": last_business_day,
                 "frequency": "MONTHLY",
                 "seriesType": "PER_PERIOD"
         }
 
 all_data = []
-for portfolio_id in portfolios_ids[:3]:
+for portfolio_id in portfolios_ids:
     URL = F"https://core.gorila.com.br/portfolios/{portfolio_id["id"]}/pnl"
     data = get_data_gorila(URL, authorization, params=PARAMNS)
 
@@ -35,7 +44,7 @@ for portfolio_id in portfolios_ids[:3]:
         df["primary_key"] = portfolio_id["id"]
         df["inserted_date"] = datetime.now().isoformat()
         
-        print(f"Extracting data from API for client {portfolio_id['name']} at {datetime.now()}")
+        print(f"Extracting data from Retorno API for client {portfolio_id['name']} at {datetime.now()}")
         all_data.append(df)
 
 new_df = pd.concat(all_data)

@@ -95,10 +95,10 @@ def get_data_gorila(url, authorization, params=None):
 
     response = requests.get(url, headers=authorization, params=params)
     if response.status_code == 200:
-        print("✅ Request bem-sucedido!")
+        print("Request bem-sucedido!")
         return response.json()
     else:
-        print(f"❌ Erro {response.status_code}: {response.text}")
+        print(f"Erro {response.status_code}: {response.text}")
         return None
 
 def get_portfolios_gorila(params):

@@ -9,7 +9,7 @@ conn = duckdb.connect("md:dwm_wealth")
 ########################## GET AUM ########################################
 authorization = auth_gorila()
 PARAMS = {
-    "limit": 500
+    "limit": 1000
 }
 portfolios_ids = get_portfolios_gorila(PARAMS)
 
@@ -18,9 +18,15 @@ TABLE_NAME = "aum"
 PREFIX_NAME = "api_gorila"
 PRIMARY_KEYS = ["referenceDate", "portfolio_id"]
 
+# Get today's date
+today = pd.Timestamp.today().normalize()
+
+# Get the business day 3 days before today
+last_business_day = (today - pd.offsets.BDay(3)).strftime("%Y-%m-%d")
+
 PARAMS_AUM = {
-    "startDate": "2024-01-01",
-    "endDate": "2025-02-28",
+    "startDate": last_business_day,
+    "endDate": last_business_day,
     "frequency": "DAILY",
 }
 
@@ -46,6 +52,3 @@ ingest_full_load_table(conn, new_df, TABLE_NAME, SCHEMA_NAME, PREFIX_NAME)
 create_unique_index(conn, SCHEMA_NAME, TABLE_NAME, f"{TABLE_NAME}_pk", PRIMARY_KEYS, PREFIX_NAME)
 ingest_cdc_load_table(conn, new_df, TABLE_NAME, SCHEMA_NAME, PRIMARY_KEYS, PREFIX_NAME)
 conn.close()
-
-
-print(len(portfolios_ids))
