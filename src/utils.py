@@ -19,3 +19,4 @@ def generate_date_dict(start_year, start_month, end_year, end_month):
         current_date = datetime(next_year, next_month if next_month <= 12 else 1, 1)
 
     return date_dict
+
