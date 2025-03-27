@@ -112,3 +112,35 @@ def get_portfolios_gorila(params):
         return response["records"]
     else:
         return None
+
+def auth_xp():
+    
+    client_id = os.getenv("CLIENT_ID_XP")
+    client_secret = os.getenv("CLIENT_SECRETS_XP")
+    header = {"Content-Type":"application/x-www-form-urlencoded"}
+    data = {
+            'grant_type': "client_credentials",
+            "scope": 'api://xpcorretora.onmicrosoft.com/api-ws-assets-query-external-prd/.default',
+            "client_id": client_id,
+            "client_secret": client_secret
+        }
+    url = 'https://login.microsoftonline.com/cf56e405-d2b0-4266-b210-aa04636b6161/oauth2/v2.0/token'
+    response = requests.post(url, headers=header, data=data)
+    if response.status_code == 200:
+        print("Request bem-sucedido!")
+        print(f"Token Gerado: Status Code {response.status_code}")
+        authorization =  response.json()["token_type"] + " " + response.json()["access_token"]
+        return authorization
+    else:
+        print("Request mal-sucedido!")
+
+def get_data_xp(url, authorization, params=None):
+
+    headers = {"Authorization": authorization}
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        print("Request bem-sucedido!")
+        return response.json()
+    else:
+        print(f"Nenhum dado encontrado!")
+        return None

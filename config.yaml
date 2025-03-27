@@ -1,7 +1,7 @@
 scripts:
   # - src\bronze\ingestion_gdrive.py
   # - src\bronze\ingestion_gsheets.py
-  #- src\bronze\ingestion_gorila_aum_full.py
-  - src\bronze\ingestion_gorila_emissor.py
+  # - src\bronze\ingestion_gorila_aum_full.py
+  # - src\bronze\ingestion_gorila_emissor.py
   - src\bronze\ingestion_gorila_position_full.py
   - src\bronze\ingestion_gorila_retorno_full.py

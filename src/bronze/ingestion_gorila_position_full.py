@@ -46,7 +46,7 @@ for portfolio_id in portfolios_ids:
 
 new_df = pd.concat(all_data)
 new_df.columns = new_df.columns.str.replace(".", "_")
-new_df.drop_duplicates(subset=PRIMARY_KEYS)
+new_df = new_df.drop_duplicates(subset=PRIMARY_KEYS)
 
 create_schema(conn, SCHEMA_NAME)
 ingest_full_load_table(conn, new_df, TABLE_NAME, SCHEMA_NAME, PREFIX_NAME)
